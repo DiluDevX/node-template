@@ -46,11 +46,8 @@ export class ConflictError extends AppError {
 }
 
 export class ValidationError extends AppError {
-  public readonly errors: Record<string, string[]>;
-
-  constructor(message = 'Validation failed', errors: Record<string, string[]> = {}) {
+  constructor(message = 'Validation failed') {
     super(message, StatusCodes.BAD_REQUEST, 'VALIDATION_ERROR');
-    this.errors = errors;
   }
 }
 

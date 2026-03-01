@@ -57,17 +57,32 @@ export const getAllItems = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit, sortBy, sortOrder = 'desc' } = req.query;
 
-    const skip = (page - 1) * limit;
-    const take = limit;
+    const parsedPage = page ? Number.parseInt(page) : undefined;
+    const parsedLimit = limit ? Number.parseInt(limit) : undefined;
+
+    let skip;
+    if (parsedPage && parsedLimit) {
+      skip = (parsedPage - 1) * parsedLimit;
+    }
+
+    let take;
+    if (parsedLimit) {
+      take = parsedLimit;
+    }
+
+    const orderBy = sortBy ? { [sortBy]: sortOrder } : undefined;
 
     const [items, total] = await Promise.all([
-      itemService.findMany({}, { skip, take }),
+      itemService.findMany({}, { skip, take }, orderBy),
       itemService.count(),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
+    let totalPages;
+    if (parsedPage && parsedLimit) {
+      totalPages = Math.ceil(total / parsedLimit);
+    }
 
     logger.info(
       {
@@ -76,6 +91,8 @@ export const getAllItems = async (
         limit,
         total,
         totalPages,
+        sortBy,
+        sortOrder,
       },
       'items fetched'
     );
@@ -85,8 +102,8 @@ export const getAllItems = async (
       message: 'Items retrieved successfully',
       data: items,
       pagination: {
-        page,
-        limit,
+        page: parsedPage,
+        limit: parsedLimit,
         total,
         totalPages,
       },

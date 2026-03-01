@@ -6,7 +6,8 @@ import { PRISMA_CODE } from '../utils/constants';
 
 export const findMany = async (
   where?: Prisma.ItemWhereInput,
-  pagination?: { skip?: number; take?: number }
+  pagination?: { skip?: number; take?: number },
+  orderBy?: Prisma.ItemOrderByWithRelationInput
 ): Promise<Item[]> => {
   return prisma.item.findMany({
     where: {
@@ -15,6 +16,7 @@ export const findMany = async (
     },
     skip: pagination?.skip,
     take: pagination?.take,
+    orderBy,
   });
 };
 
@@ -52,6 +54,14 @@ export const create = async (data: Prisma.ItemCreateInput): Promise<Item> => {
 };
 
 export const update = async (id: string, data: Prisma.ItemUpdateInput): Promise<Item> => {
+  const existingItem = await prisma.item.findFirst({
+    where: { id, deletedAt: null },
+  });
+
+  if (!existingItem) {
+    throw new NotFoundError(`Item with id ${id} not found`);
+  }
+
   try {
     return await prisma.item.update({
       where: { id },

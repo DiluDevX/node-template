@@ -7,13 +7,16 @@ import {
   updateItem,
 } from '../../controllers/v1/item.controller';
 
-import { validateBody, validateParams } from '../../middleware/validate.middleware';
-import { idRequestPathParamsSchema } from '../../schema/common.schema';
+import { validateBody, validateParams, validateQuery } from '../../middleware/validate.middleware';
+import {
+  commonRequestQueryParamsSchema,
+  idRequestPathParamsSchema,
+} from '../../schema/common.schema';
 import { createItemRequestBodySchema, updateItemRequestBodySchema } from '../../schema/item.schema';
 
 const router = Router();
 
-router.get('/', getAllItems);
+router.get('/', validateQuery(commonRequestQueryParamsSchema), getAllItems);
 
 router.get('/:id', validateParams(idRequestPathParamsSchema), getItemById);
 

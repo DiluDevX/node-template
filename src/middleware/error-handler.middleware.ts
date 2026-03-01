@@ -1,14 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
-import { AppError, ValidationError } from '../utils/errors';
+import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { environment } from '../config/environment';
 import { Prisma } from '@prisma/client';
-import StatusCodes from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import { EnvironmentEnum, PRISMA_CODE } from '../utils/constants';
 import { CommonResponseDTO } from '../dtos/common.dto';
 interface ErrorResponseDTO extends CommonResponseDTO {
   code?: string;
-  errors?: Record<string, string[]>;
   stack?: string;
 }
 
@@ -18,10 +17,6 @@ function handleAppError(err: AppError, res: Response): void {
     message: err.message,
     code: err.code,
   };
-
-  if (err instanceof ValidationError) {
-    response.errors = err.errors;
-  }
 
   if (environment.env !== EnvironmentEnum.Production) {
     response.stack = err.stack;
@@ -94,7 +89,10 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 
   const response: ErrorResponseDTO = {
     success: false,
-    message: err.message ?? 'Internal Server Error',
+    message:
+      environment.env === EnvironmentEnum.Production
+        ? 'Internal Server Error'
+        : (err.message ?? 'Internal Server Error'),
   };
 
   if (environment.env !== EnvironmentEnum.Production) {

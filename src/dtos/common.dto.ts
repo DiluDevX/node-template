@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 import { commonRequestQueryParamsSchema, idRequestPathParamsSchema } from '../schema/common.schema';
 
 export interface CommonResponseDTO<T = unknown> {
@@ -9,10 +9,10 @@ export interface CommonResponseDTO<T = unknown> {
 }
 
 export interface PaginationInfoDTO {
-  page: number;
-  limit: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
   total: number;
-  totalPages: number;
 }
 
 export type HealthCheckResponseBodyDTO = {
