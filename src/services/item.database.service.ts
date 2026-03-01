@@ -1,13 +1,13 @@
-import { Prisma, User } from '@prisma/client';
+import { Prisma, Item } from '@prisma/client';
 import { prisma } from '../config/database';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 const PRISMA_NOT_FOUND_CODE = 'P2025';
 
-export const userDatabaseService = {
-  async findMany(where?: Prisma.UserWhereInput): Promise<User[]> {
-    return prisma.user.findMany({
+export const itemDatabaseService = {
+  async findMany(where?: Prisma.ItemWhereInput): Promise<Item[]> {
+    return prisma.item.findMany({
       where: {
         ...where,
         deletedAt: null,
@@ -15,8 +15,8 @@ export const userDatabaseService = {
     });
   },
 
-  async findOneById(id: string): Promise<User | null> {
-    return prisma.user.findFirst({
+  async findOneById(id: string): Promise<Item | null> {
+    return prisma.item.findFirst({
       where: {
         id,
         deletedAt: null,
@@ -24,29 +24,20 @@ export const userDatabaseService = {
     });
   },
 
-  async findOneByEmail(email: string): Promise<User | null> {
-    return prisma.user.findFirst({
-      where: {
-        email,
-        deletedAt: null,
-      },
-    });
-  },
-
-  async create(data: Prisma.UserCreateInput): Promise<User> {
+  async create(data: Prisma.ItemCreateInput): Promise<Item> {
     try {
-      return await prisma.user.create({ data });
+      return await prisma.item.create({ data });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictError('A user with this email already exists');
+        throw new ConflictError('An item with this identifier already exists');
       }
       throw error;
     }
   },
 
-  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+  async update(id: string, data: Prisma.ItemUpdateInput): Promise<Item> {
     try {
-      return await prisma.user.update({
+      return await prisma.item.update({
         where: { id },
         data,
       });
@@ -55,15 +46,15 @@ export const userDatabaseService = {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === PRISMA_NOT_FOUND_CODE
       ) {
-        throw new NotFoundError(`User with id ${id} not found`);
+        throw new NotFoundError(`Item with id ${id} not found`);
       }
       throw error;
     }
   },
 
-  async softDelete(id: string): Promise<User> {
+  async softDelete(id: string): Promise<Item> {
     try {
-      return await prisma.user.update({
+      return await prisma.item.update({
         where: { id },
         data: { deletedAt: new Date() },
       });
@@ -72,25 +63,25 @@ export const userDatabaseService = {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === PRISMA_NOT_FOUND_CODE
       ) {
-        throw new NotFoundError(`User with id ${id} not found`);
+        throw new NotFoundError(`Item with id ${id} not found`);
       }
       throw error;
     }
   },
 
-  async hardDelete(id: string): Promise<User> {
+  async hardDelete(id: string): Promise<Item> {
     try {
-      return await prisma.user.delete({ where: { id } });
+      return await prisma.item.delete({ where: { id } });
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === PRISMA_NOT_FOUND_CODE
       ) {
-        throw new NotFoundError(`User with id ${id} not found`);
+        throw new NotFoundError(`Item with id ${id} not found`);
       }
       throw error;
     }
   },
 };
 
-logger.debug('UserDatabaseService initialized');
+logger.debug('ItemDatabaseService initialized');
