@@ -3,16 +3,6 @@ export interface CreateItemRequestBodyDTO {
   description?: string;
 }
 
-export interface GetAllItemsResponseDTO {
-  items: ItemResponseDTO[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
 export interface UpdateItemRequestBodyDTO {
   name?: string;
   description?: string;

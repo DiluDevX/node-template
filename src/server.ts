@@ -1,5 +1,5 @@
 import express, { ErrorRequestHandler } from 'express';
-import { connectDatabase } from './config/database';
+import { connectDatabase, prisma } from './config/database';
 import { logger } from './utils/logger';
 import { environment } from './config/environment';
 import { errorHandler } from './middleware/error-handler.middleware';
@@ -27,27 +27,39 @@ async function startServer(): Promise<void> {
   try {
     await connectDatabase();
 
-    app.listen(environment.port, () => {
+    const server = app.listen(environment.port, () => {
       logger.info(
         { port: environment.port, env: environment.env, service: environment.serviceName },
         'Server started successfully'
       );
     });
+
+    // Graceful shutdown handlers
+    const shutdown = async (signal: string) => {
+      logger.info(`${signal} received. Shutting down gracefully...`);
+
+      try {
+        await new Promise<void>((resolve) => {
+          server.close(() => resolve());
+        });
+        logger.info('HTTP server closed');
+
+        await prisma.$disconnect();
+        logger.info('Database disconnected');
+      } catch (error) {
+        logger.error({ error }, 'Error during shutdown');
+        process.exit(1);
+      }
+
+      process.exit(0);
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
     logger.fatal({ error }, 'Failed to start server');
     process.exit(1);
   }
 }
-
-// Graceful shutdown handlers
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  logger.info('SIGINT received. Shutting down gracefully...');
-  process.exit(0);
-});
 
 startServer();

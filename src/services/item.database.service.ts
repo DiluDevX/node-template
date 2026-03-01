@@ -80,9 +80,21 @@ export const update = async (id: string, data: Prisma.ItemUpdateInput): Promise<
 };
 
 export const softDelete = async (id: string): Promise<Item> => {
+  const existingItem = await prisma.item.findUnique({
+    where: { id },
+  });
+
+  if (!existingItem) {
+    throw new NotFoundError(`Item with id ${id} not found`);
+  }
+
+  if (existingItem.deletedAt) {
+    return existingItem;
+  }
+
   try {
     return await prisma.item.update({
-      where: { id },
+      where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
     });
   } catch (error) {

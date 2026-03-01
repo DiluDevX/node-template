@@ -29,9 +29,5 @@ export const healthCheck = async (
 };
 
 export const fallback = async (_req: Request, _res: Response, next: NextFunction) => {
-  try {
-    throw new NotFoundError('Route not found');
-  } catch (error) {
-    next(error);
-  }
+  next(new NotFoundError('Route not found'));
 };
