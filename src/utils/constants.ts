@@ -13,9 +13,8 @@ export const HTTP_STATUS = {
 } as const;
 
 export const ERROR_MESSAGES = {
-  INVALID_CREDENTIALS: 'Invalid email or password',
-  USER_NOT_FOUND: 'User not found',
-  EMAIL_ALREADY_EXISTS: 'A user with this email already exists',
+  RESOURCE_NOT_FOUND: 'Resource not found',
+  RESOURCE_ALREADY_EXISTS: 'Resource already exists',
   INVALID_TOKEN: 'Invalid or expired token',
   UNAUTHORIZED: 'You are not authorized to perform this action',
   FORBIDDEN: 'Access denied',
