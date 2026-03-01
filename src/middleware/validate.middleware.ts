@@ -15,7 +15,12 @@ function createValidator(target: ValidationTarget) {
       } catch (error) {
         if (error instanceof ZodError) {
           next(new ValidationError('Validation failed'));
-          logger.error(error, 'Validation error');
+          const sanitizedIssues = error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            code: issue.code,
+            message: issue.message,
+          }));
+          logger.error({ issues: sanitizedIssues }, 'Validation error');
           return;
         }
         next(error);
