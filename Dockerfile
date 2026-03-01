@@ -1,41 +1,52 @@
-# ---- Builder Stage ----
-FROM node:20-alpine AS builder
+# ─── Stage 1: Builder ────────────────────────────────────────────────────────
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files and install all dependencies (including dev)
-COPY package*.json ./
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy source code and build
-COPY tsconfig.json ./
-COPY src ./src
-COPY prisma ./prisma
-
-RUN npm run prisma:generate
+COPY . .
+RUN npx prisma generate
 RUN npm run build
 
-# ---- Runtime Stage ----
-FROM node:20-alpine AS runtime
+# ─── Stage 2: Production deps ────────────────────────────────────────────────
+FROM node:24-alpine AS deps
 
 WORKDIR /app
 
-# Copy package files and install only production dependencies
-COPY package*.json ./
+COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
-# Copy Prisma client and schema
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY prisma ./prisma
+# ─── Stage 3: Runner ─────────────────────────────────────────────────────────
+FROM node:24-alpine AS runner
 
-# Copy built application
-COPY --from=builder /app/dist ./dist
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser  --system --uid 1001 app
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
+WORKDIR /app
 
+ARG ENV=production
+ARG APP_VERSION=unknown
+ENV ENV=$ENV \
+    APP_VERSION=$APP_VERSION \
+    NODE_ENV=production
+
+# Production node_modules
+COPY --from=deps    --chown=app:nodejs /app/node_modules                ./node_modules
+
+# Schema — required by migrate deploy
+COPY --from=builder --chown=app:nodejs /app/prisma                      ./prisma
+
+# App
+COPY --from=builder --chown=app:nodejs /app/dist                        ./dist
+COPY --from=builder --chown=app:nodejs /app/package.json                ./package.json
+
+COPY --chown=app:nodejs docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
+USER app
 EXPOSE 3000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["node", "dist/index.js"]

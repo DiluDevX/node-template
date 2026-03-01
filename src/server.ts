@@ -1,52 +1,72 @@
-import express from 'express';
-import { env } from './config/environment';
-import { connectDatabase } from './config/database';
-import { requestLoggerMiddleware } from './middleware/request-logger.middleware';
-import { errorHandlerMiddleware } from './middleware/error-handler.middleware';
-import router from './routes/index';
+import express, { ErrorRequestHandler } from 'express';
+import { connectDatabase, prisma } from './config/database';
 import { logger } from './utils/logger';
+import { environment } from './config/environment';
+import { errorHandler } from './middleware/error-handler.middleware';
+import { rateLimiterMiddleware } from './middleware/rate-limiter.middleware';
+import routes from './routes';
 
 const app = express();
+
+let isShuttingDown = false;
 
 // Parse JSON request bodies
 app.use(express.json());
 
-// Log all incoming requests
-app.use(requestLoggerMiddleware);
+// Parse URL-encoded request bodies
+app.use(express.urlencoded({ extended: true }));
 
-// Register all routes under /api/v1
-app.use('/api/v1', router);
+// global rate limiter
+app.use(rateLimiterMiddleware);
+
+// Routes
+app.use(routes);
 
 // Global error handler (must be last middleware)
-app.use(errorHandlerMiddleware);
+app.use(errorHandler as ErrorRequestHandler);
 
 async function startServer(): Promise<void> {
   try {
     await connectDatabase();
 
-    app.listen(env.PORT, () => {
+    const server = app.listen(environment.port, () => {
       logger.info(
-        { port: env.PORT, env: env.NODE_ENV, service: env.SERVICE_NAME },
+        { port: environment.port, env: environment.env, service: environment.serviceName },
         'Server started successfully'
       );
     });
+
+    // Graceful shutdown handlers
+    const shutdown = async (signal: string) => {
+      if (isShuttingDown) {
+        return;
+      }
+      isShuttingDown = true;
+
+      logger.info(`${signal} received. Shutting down gracefully...`);
+
+      try {
+        await new Promise<void>((resolve) => {
+          server.close(() => resolve());
+        });
+        logger.info('HTTP server closed');
+
+        await prisma.$disconnect();
+        logger.info('Database disconnected');
+      } catch (error) {
+        logger.error({ error }, 'Error during shutdown');
+        process.exit(1);
+      }
+
+      process.exit(0);
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
     logger.fatal({ error }, 'Failed to start server');
     process.exit(1);
   }
 }
 
-// Graceful shutdown handlers
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  logger.info('SIGINT received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-void startServer();
-
-export default app;
+startServer();

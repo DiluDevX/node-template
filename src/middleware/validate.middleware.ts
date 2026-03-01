@@ -1,27 +1,51 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { ZodSchema, ZodError } from 'zod';
 import { ValidationError } from '../utils/errors';
+import { logger } from '../utils/logger';
 
-export function validate<T>(schema: ZodSchema<T>) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
-    const result = schema.safeParse(req.body);
+type ValidationTarget = 'body' | 'query' | 'params';
 
-    if (!result.success) {
-      const zodError = result.error as ZodError;
-      const errors: Record<string, string[]> = {};
-
-      for (const issue of zodError.issues) {
-        const path = issue.path.join('.') || 'body';
-        if (!errors[path]) {
-          errors[path] = [];
+function createValidator(target: ValidationTarget) {
+  return (schema: ZodSchema): RequestHandler => {
+    return (req: Request, _res: Response, next: NextFunction): void => {
+      try {
+        const result = schema.parse(req[target]);
+        req[target] = result;
+        next();
+      } catch (error) {
+        if (error instanceof ZodError) {
+          next(new ValidationError('Validation failed'));
+          const sanitizedIssues = error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            code: issue.code,
+            message: issue.message,
+          }));
+          logger.error({ issues: sanitizedIssues }, 'Validation error');
+          return;
         }
-        errors[path].push(issue.message);
+        next(error);
       }
-
-      return next(new ValidationError('Validation failed', errors));
-    }
-
-    req.body = result.data;
-    next();
+    };
   };
 }
+
+/**
+ * Validates request body against a Zod schema.
+ * @example
+ * router.post('/', validateBody(createUserSchema), createUser);
+ */
+export const validateBody = createValidator('body');
+
+/**
+ * Validates query parameters against a Zod schema.
+ * @example
+ * router.get('/', validateQuery(paginationSchema), listUsers);
+ */
+export const validateQuery = createValidator('query');
+
+/**
+ * Validates route parameters against a Zod schema.
+ * @example
+ * router.get('/:id', validateParams(idRequestPathParamsSchema), getUser);
+ */
+export const validateParams = createValidator('params');

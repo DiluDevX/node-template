@@ -1,11 +1,10 @@
 import pino from 'pino';
-import { env } from '../config/environment';
-
-const isDevelopment = env.NODE_ENV === 'development';
+import { environment } from '../config/environment';
+import { EnvironmentEnum } from './constants';
 
 export const logger = pino({
-  level: env.LOG_LEVEL,
-  ...(isDevelopment && {
+  level: environment.logging.level,
+  ...(environment.env !== EnvironmentEnum.Production && {
     transport: {
       target: 'pino-pretty',
       options: {
@@ -16,7 +15,7 @@ export const logger = pino({
     },
   }),
   base: {
-    service: env.SERVICE_NAME,
-    env: env.NODE_ENV,
+    service: environment.serviceName,
+    env: environment.env,
   },
 });

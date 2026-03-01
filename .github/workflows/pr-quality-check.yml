@@ -2,38 +2,45 @@ name: PR Quality Check
 
 on:
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-quality-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Quality Checks
+  quality-checks:
+    name: ${{ matrix.check.name }}
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - name: Lint
+            command: npm run lint:check
+          - name: Format
+            command: npm run format:check
+          - name: Types
+            command: npm run types:check
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm i
 
-      - name: Lint check
-        run: npm run lint:check
-
-      - name: Format check
-        run: npm run format:check
-
-      - name: Type check
-        run: npm run types:check
-
-      - name: Build check
-        run: npm run build
+      - name: Run ${{ matrix.check.name }} check
+        run: ${{ matrix.check.command }}
