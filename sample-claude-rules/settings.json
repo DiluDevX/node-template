@@ -2,15 +2,19 @@
   "$schema": "https://cdn.jsdelivr.net/npm/@anthropic-ai/claude-code@latest/config-schema.json",
   "permissions": {
     "allow": [
-      "Bash(yarn lint)",
-      "Bash(yarn lint:fix)",
-      "Bash(yarn format)",
-      "Bash(yarn format:fix)",
-      "Bash(yarn typecheck)",
-      "Bash(yarn test)",
-      "Bash(yarn test:unit)",
-      "Bash(yarn test:e2e)",
-      "Bash(yarn build)",
+      "Bash(npm run lint:check)",
+      "Bash(npm run lint:fix)",
+      "Bash(npm run format:check)",
+      "Bash(npm run format:fix)",
+      "Bash(npm run types:check)",
+      "Bash(npm run test*)",
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm run prisma*)",
+      "Bash(npm install*)",
+      "Bash(npm ci)",
+      "Bash(npm outdated)",
+      "Bash(npm audit*)",
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
@@ -26,8 +30,9 @@
       "Bash(rm -rf *)",
       "Bash(git push --force*)",
       "Bash(git reset --hard*)",
-      "Bash(yarn migrate:up:prod*)",
-      "Bash(npm *)"
+      "Bash(yarn *)",
+      "Bash(pnpm *)",
+      "Bash(bun *)"
     ]
   },
   "hooks": {

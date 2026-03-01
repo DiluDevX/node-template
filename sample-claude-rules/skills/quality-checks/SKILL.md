@@ -16,31 +16,31 @@ Run each check sequentially. Stop and report if any step fails.
 ### Step 1: Format Check
 
 ```bash
-yarn format
+npm run format:check
 ```
 
 ### Step 2: Lint Check
 
 ```bash
-yarn lint
+npm run lint:check
 ```
 
 ### Step 3: Type Check
 
 ```bash
-yarn typecheck
+npm run types:check
 ```
 
 ### Step 4: Build
 
 ```bash
-yarn build
+npm run build
 ```
 
 ### Step 5: Unit Tests
 
 ```bash
-yarn test:unit
+npm run test
 ```
 
 ## Report

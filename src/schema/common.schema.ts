@@ -8,7 +8,7 @@ export const commonRequestQueryParamsSchema = z.object({
   page: z.string().optional(),
   limit: z.string().optional(),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).default('desc').optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
 export const emailSchema = z

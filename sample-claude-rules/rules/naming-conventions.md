@@ -5,7 +5,7 @@
 All files use `kebab-case`:
 
 - Controllers: `my-domain.controller.ts`
-- Services: `my-domain.service.ts` (business logic) or `my-domain.database.service.ts` (Sequelize queries)
+- Services: `my-domain.service.ts` (business logic) or `my-domain.database.service.ts` (Prisma queries)
 - Models: `my-domain.model.ts`
 - DTOs: `my-domain.dto.ts`
 - Schemas: `my-domain.schema.ts`

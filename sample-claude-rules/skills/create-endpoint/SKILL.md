@@ -20,14 +20,14 @@ Scaffold a new API endpoint following the project's established patterns.
 
 ### Files to Create
 
-| File       | Path                                          | Purpose                                        |
-| ---------- | --------------------------------------------- | ---------------------------------------------- |
-| DTO        | `src/dto/<resource>.dto.ts`                   | Request/response type interfaces               |
-| Schema     | `src/schema/<resource>.schema.ts`             | AJV validation schemas (`JSONSchemaType<DTO>`) |
-| DB Service | `src/services/<resource>.database.service.ts` | Sequelize CRUD operations                      |
-| Service    | `src/services/<resource>.service.ts`          | Business logic (if needed)                     |
-| Controller | `src/controllers/v1/<resource>.controller.ts` | Request handlers with try/catch + next(error)  |
-| Routes     | `src/routes/v1/<resource>.routes.ts`          | Express Router with middleware chain           |
+| File       | Path                                          | Purpose                                       |
+| ---------- | --------------------------------------------- | --------------------------------------------- |
+| DTO        | `src/dto/<resource>.dto.ts`                   | Request/response type interfaces              |
+| Schema     | `src/schema/<resource>.schema.ts`             | Zod validation schemas (`z.object()`)         |
+| DB Service | `src/services/<resource>.database.service.ts` | Prisma CRUD operations                        |
+| Service    | `src/services/<resource>.service.ts`          | Business logic (if needed)                    |
+| Controller | `src/controllers/v1/<resource>.controller.ts` | Request handlers with try/catch + next(error) |
+| Routes     | `src/routes/v1/<resource>.routes.ts`          | Express Router with middleware chain          |
 
 4. **Register the route** in `src/routes/v1/index.ts` (or the appropriate version).
 
