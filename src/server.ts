@@ -8,6 +8,8 @@ import routes from './routes';
 
 const app = express();
 
+let isShuttingDown = false;
+
 // Parse JSON request bodies
 app.use(express.json());
 
@@ -36,6 +38,11 @@ async function startServer(): Promise<void> {
 
     // Graceful shutdown handlers
     const shutdown = async (signal: string) => {
+      if (isShuttingDown) {
+        return;
+      }
+      isShuttingDown = true;
+
       logger.info(`${signal} received. Shutting down gracefully...`);
 
       try {

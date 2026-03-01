@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 import { environment } from './environment';
-import { EnvironmentEnum } from '../utils/constants';
+import { EnvironmentEnum, PRISMA_CODE } from '../utils/constants';
 
 declare global {
   var prisma: PrismaClient | undefined;
@@ -42,3 +42,10 @@ export async function checkDatabaseConnection(): Promise<'connected' | 'disconne
     return 'disconnected';
   }
 }
+
+export const isPrismaErrorWithCode = (
+  error: unknown,
+  code: (typeof PRISMA_CODE)[keyof typeof PRISMA_CODE]
+): error is Prisma.PrismaClientKnownRequestError => {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === code;
+};

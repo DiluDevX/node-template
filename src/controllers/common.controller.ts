@@ -19,7 +19,7 @@ export const healthCheck = async (
       data: {
         db,
         service: environment.serviceName,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         version: environment.version,
       },
     });

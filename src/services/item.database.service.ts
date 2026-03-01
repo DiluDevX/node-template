@@ -1,5 +1,5 @@
 import { Prisma, Item } from '@prisma/client';
-import { prisma } from '../config/database';
+import { isPrismaErrorWithCode, prisma } from '../config/database';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
 import { PRISMA_CODE } from '../utils/constants';
@@ -42,10 +42,7 @@ export const create = async (data: Prisma.ItemCreateInput): Promise<Item> => {
   try {
     return await prisma.item.create({ data });
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === PRISMA_CODE.CONFLICT
-    ) {
+    if (isPrismaErrorWithCode(error, PRISMA_CODE.CONFLICT)) {
       throw new ConflictError('An item with this identifier already exists');
     }
 
@@ -54,17 +51,9 @@ export const create = async (data: Prisma.ItemCreateInput): Promise<Item> => {
 };
 
 export const update = async (id: string, data: Prisma.ItemUpdateInput): Promise<Item> => {
-  const existingItem = await prisma.item.findFirst({
-    where: { id, deletedAt: null },
-  });
-
-  if (!existingItem) {
-    throw new NotFoundError(`Item with id ${id} not found`);
-  }
-
   try {
     return await prisma.item.update({
-      where: { id },
+      where: { id, deletedAt: null },
       data,
     });
   } catch (error) {
@@ -80,28 +69,13 @@ export const update = async (id: string, data: Prisma.ItemUpdateInput): Promise<
 };
 
 export const softDelete = async (id: string): Promise<Item> => {
-  const existingItem = await prisma.item.findUnique({
-    where: { id },
-  });
-
-  if (!existingItem) {
-    throw new NotFoundError(`Item with id ${id} not found`);
-  }
-
-  if (existingItem.deletedAt) {
-    return existingItem;
-  }
-
   try {
     return await prisma.item.update({
       where: { id, deletedAt: null },
       data: { deletedAt: new Date() },
     });
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === PRISMA_CODE.NOT_FOUND
-    ) {
+    if (isPrismaErrorWithCode(error, PRISMA_CODE.NOT_FOUND)) {
       throw new NotFoundError(`Item with id ${id} not found`);
     }
 
@@ -113,10 +87,7 @@ export const hardDelete = async (id: string): Promise<Item> => {
   try {
     return await prisma.item.delete({ where: { id } });
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === PRISMA_CODE.NOT_FOUND
-    ) {
+    if (isPrismaErrorWithCode(error, PRISMA_CODE.NOT_FOUND)) {
       throw new NotFoundError(`Item with id ${id} not found`);
     }
 

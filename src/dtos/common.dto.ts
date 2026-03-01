@@ -17,7 +17,7 @@ export interface PaginationInfoDTO {
 export type HealthCheckResponseBodyDTO = {
   db: 'connected' | 'disconnected' | 'unknown';
   version: string;
-  timestamp: Date;
+  timestamp: string;
   service: string;
 };
 
