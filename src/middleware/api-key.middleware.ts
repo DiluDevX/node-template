@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { timingSafeEqual } from 'crypto';
+import { timingSafeEqual } from 'node:crypto';
 import { UnauthorizedError } from '../utils/errors';
 
 const API_KEY_HEADER = 'x-api-key';
