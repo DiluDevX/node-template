@@ -1,40 +1,56 @@
-# ---- Builder Stage ----
-FROM node:20-alpine AS builder
+FROM node:24.11.1-alpine AS builder
 
-WORKDIR /app
+ARG ENV=development
+ENV NODE_ENV=$ENV
+ARG APP_VERSION=0.0.0-dev
+ENV APP_VERSION=$APP_VERSION
 
-# Copy package files and install all dependencies (including dev)
-COPY package*.json ./
+WORKDIR /usr/app
+
+RUN apk add --no-cache curl gnupg \
+    && curl -Ls https://cli.doppler.com/install.sh | sh
+
+COPY package.json package-lock.json ./
 RUN npm ci
 
-# Copy source code and build
-COPY tsconfig.json ./
-COPY src ./src
-COPY prisma ./prisma
+# Use BuildKit secrets for sensitive data during build
+# Secrets are not stored in image layers and are only mounted at build time
+# Usage: docker build --secret doppler_token=<token> --secret database_url=<url> ...
+RUN --mount=type=secret,id=doppler_token \
+    sh -c 'export DOPPLER_TOKEN=$(cat /run/secrets/doppler_token) && \
+    doppler run -- npx prisma generate'
 
-RUN npm run prisma:generate
-RUN npm run build
+COPY . .
 
-# ---- Runtime Stage ----
-FROM node:20-alpine AS runtime
+RUN --mount=type=secret,id=doppler_token \
+    sh -c 'export DOPPLER_TOKEN=$(cat /run/secrets/doppler_token) && \
+    doppler run -- npm run build'
 
-WORKDIR /app
+FROM node:24.11.1-alpine
 
-# Copy package files and install only production dependencies
-COPY package*.json ./
-RUN npm ci --omit=dev
+ARG ENV=development
+ENV NODE_ENV=$ENV
+ARG APP_VERSION=0.0.0-dev
+ENV APP_VERSION=$APP_VERSION
 
-# Copy Prisma client and schema
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY prisma ./prisma
+WORKDIR /usr/app
 
-# Copy built application
-COPY --from=builder /app/dist ./dist
+LABEL org.opencontainers.image.version=$APP_VERSION
 
-# Copy entrypoint script
+RUN apk add --no-cache gnupg
+
+COPY --from=builder /usr/app/package.json ./package.json
+COPY --from=builder /usr/app/package-lock.json ./package-lock.json
+COPY --from=builder /usr/app/node_modules ./node_modules
+COPY --from=builder /usr/app/dist ./dist
+COPY --from=builder /usr/app/prisma ./prisma
+COPY --from=builder /usr/local/bin/doppler /usr/local/bin/doppler
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
+
+RUN chmod +x ./docker-entrypoint.sh \
+    && chown -R node:node /usr/app
+
+USER node
 
 EXPOSE 3000
 

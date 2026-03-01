@@ -1,7 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
+import { environment } from './environment';
+import { EnvironmentEnum } from '../utils/constants';
 
-export const prisma = new PrismaClient();
+declare global {
+  var prisma: PrismaClient | undefined;
+}
+
+// Prevent multiple instances during hot reload in development
+export const prisma = globalThis.prisma || new PrismaClient();
+
+if (environment.env !== EnvironmentEnum.Production) {
+  globalThis.prisma = prisma;
+}
 
 export async function connectDatabase(): Promise<void> {
   try {
@@ -20,5 +31,14 @@ export async function disconnectDatabase(): Promise<void> {
   } catch (error) {
     logger.error({ error }, 'Failed to disconnect from database');
     throw error;
+  }
+}
+
+export async function checkDatabaseConnection(): Promise<'connected' | 'disconnected'> {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return 'connected';
+  } catch {
+    return 'disconnected';
   }
 }

@@ -1,8 +1,16 @@
-import { CommonResponseDTO, PaginatedResponseDTO } from './common.dto';
-
 export interface CreateItemRequestBodyDTO {
   name: string;
   description?: string;
+}
+
+export interface GetAllItemsResponseDTO {
+  items: ItemResponseDTO[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface UpdateItemRequestBodyDTO {
@@ -10,7 +18,7 @@ export interface UpdateItemRequestBodyDTO {
   description?: string;
 }
 
-export interface ItemResponseDTO {
+interface ItemResponseDTO {
   id: string;
   name: string;
   description: string | null;
@@ -18,8 +26,7 @@ export interface ItemResponseDTO {
   updatedAt: Date;
 }
 
-export type CreateItemResponseDTO = CommonResponseDTO<ItemResponseDTO>;
-export type GetItemResponseDTO = CommonResponseDTO<ItemResponseDTO>;
-export type UpdateItemResponseDTO = CommonResponseDTO<ItemResponseDTO>;
-export type DeleteItemResponseDTO = CommonResponseDTO<null>;
-export type GetItemsResponseDTO = PaginatedResponseDTO<ItemResponseDTO>;
+export type CreateItemResponseDTO = ItemResponseDTO;
+export type GetItemResponseDTO = ItemResponseDTO;
+export type UpdateItemResponseDTO = ItemResponseDTO;
+export type DeleteItemResponseDTO = ItemResponseDTO;

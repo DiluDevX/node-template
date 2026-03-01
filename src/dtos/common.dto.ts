@@ -1,7 +1,5 @@
-import type {
-  IdRequestPathParamsInput,
-  CommonRequestQueryParamsInput,
-} from '../schema/common.schema';
+import z from 'zod';
+import { commonRequestQueryParamsSchema, idRequestPathParamsSchema } from '../schema/common.schema';
 
 export interface CommonResponseDTO<T = unknown> {
   success: boolean;
@@ -17,9 +15,16 @@ export interface PaginationInfoDTO {
   totalPages: number;
 }
 
+export type HealthCheckResponseBodyDTO = {
+  db: 'connected' | 'disconnected' | 'unknown';
+  version: string;
+  timestamp: Date;
+  service: string;
+};
+
 export interface PaginatedResponseDTO<T = unknown> extends CommonResponseDTO<T[]> {
   pagination: PaginationInfoDTO;
 }
 
-export type IdRequestPathParamsDTO = IdRequestPathParamsInput;
-export type CommonRequestQueryParamsDTO = CommonRequestQueryParamsInput;
+export type IdRequestPathParamsDTO = z.infer<typeof idRequestPathParamsSchema>;
+export type CommonRequestQueryParamsDTO = z.infer<typeof commonRequestQueryParamsSchema>;
