@@ -1,4 +1,4 @@
-import { Prisma, Item } from '@prisma/client';
+import { Prisma, Item } from '../../generated/prisma/client.js';
 import { isPrismaErrorWithCode, prisma } from '../config/database';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
