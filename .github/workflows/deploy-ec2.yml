@@ -89,27 +89,16 @@ jobs:
             echo "$ECR_PASSWORD" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
             docker pull "$IMAGE_URI"
 
-            docker rm -f deliveroo-auth-service >/dev/null 2>&1 || true
+            docker rm -f template-service >/dev/null 2>&1 || true
 
-             # Map DEPLOY_ENV to Doppler config names (dev/prd)
-             if [ "$DEPLOY_ENV" = "development" ]; then
-               DOPPLER_CONFIG="dev"
-             elif [ "$DEPLOY_ENV" = "production" ]; then
-               DOPPLER_CONFIG="prd"
-             else
-               echo "Error: Invalid DEPLOY_ENV value: $DEPLOY_ENV"
-               echo "Expected: 'development' or 'production'"
-               exit 1
-             fi
-
-             docker run -d \
-               --name deliveroo-auth-service \
-               --restart unless-stopped \
-               -p 80:3000 \
-               -e NODE_ENV="$DEPLOY_ENV" \
-               -e APP_VERSION="$APP_VERSION" \
-               -e DOPPLER_TOKEN="$DOPPLER_TOKEN" \
-               -e DOPPLER_CONFIG="$DOPPLER_CONFIG" \
-               -e SERVICE_NAME="auth-service" \
-               -e PORT="3000" \
-               "$IMAGE_URI"
+              docker run -d \
+                --name template-service \
+                --restart unless-stopped \
+                -p 80:3000 \
+                -e NODE_ENV="$DEPLOY_ENV" \
+                -e APP_VERSION="$APP_VERSION" \
+                -e DOPPLER_TOKEN="$DOPPLER_TOKEN" \
+                -e DOPPLER_CONFIG="$DOPPLER_CONFIG" \
+                -e SERVICE_NAME="template-service" \
+                -e PORT="3000" \
+                "$IMAGE_URI"
