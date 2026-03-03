@@ -2,8 +2,7 @@
   "name": "node-template",
   "version": "1.0.0",
   "description": "Production-ready TypeScript/Express node microservice starter template",
-  "main": "dist/server.js",
-  "type": "module",
+  "main": "dist/index.js",
   "engines": {
     "node": ">=24"
   },

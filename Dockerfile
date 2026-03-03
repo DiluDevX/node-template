@@ -34,6 +34,7 @@ COPY --from=builder --chown=app:nodejs /app/prisma          ./prisma
 COPY --from=builder --chown=app:nodejs /app/generated       ./generated
 COPY --from=builder --chown=app:nodejs /app/dist            ./dist
 COPY --from=builder --chown=app:nodejs /app/package.json    ./package.json
+COPY --from=builder --chown=app:nodejs /app/prisma.config.ts    ./prisma.config.ts
 
 COPY --chown=app:nodejs docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
@@ -42,4 +43,4 @@ USER app
 EXPOSE 3000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/src/index.js"]

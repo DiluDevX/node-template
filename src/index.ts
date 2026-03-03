@@ -22,7 +22,6 @@ app.use(rateLimiterMiddleware);
 // Routes
 app.use(routes);
 
-// Global error handler (must be last middleware)
 app.use(errorHandler as ErrorRequestHandler);
 
 async function startServer(): Promise<void> {
