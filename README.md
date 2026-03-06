@@ -151,18 +151,106 @@ docker run -p 3000:3000 \
 
 ## Deployment
 
-The repository includes three GitHub Actions workflows:
+The repository includes GitHub Actions workflows:
 
-- **`pr-quality-check.yml`**: Runs lint, format, type-check and build on every PR.
-- **`release.yml`**: Runs `semantic-release` on pushes to `main` to auto-generate
-  changelogs and GitHub releases.
-- **`deploy-ec2.yml`**: Manually triggered workflow that builds a Docker image,
-  pushes it to Amazon ECR, and deploys it to an EC2 instance via SSH.
+- **`pr-quality-check.yml`**: Runs lint, format, type-check on every PR
+- **`release-main.yml`**: Runs semantic-release on pushes to `main`, auto-deploys to production
+- **`release-develop.yml`**: Runs semantic-release on pushes to `develop`, auto-deploys to development
+- **`deploy.yml`**: Reusable workflow that builds Docker, pushes to ECR, deploys to EC2
 
-### Required Secrets for Deployment
+### GitHub Secrets Configuration
 
+Go to **Repository Settings → Secrets and variables → Actions** and add these secrets:
+
+#### Required Secrets
+
+| Secret                  | Description                                    |
+| ----------------------- | ---------------------------------------------- |
+| `AWS_ACCESS_KEY_ID`     | AWS IAM user with EC2 and ECR permissions      |
+| `AWS_SECRET_ACCESS_KEY` | AWS IAM user secret key                        |
+| `EC2_HOST`              | Public IP or DNS of your EC2 instance          |
+| `EC2_USER`              | SSH username (e.g., `ec2-user`, `ubuntu`)      |
+| `EC2_SSH_KEY`           | Private SSH key for EC2 authentication         |
+| `RELEASE_TOKEN`         | GitHub Personal Access Token with `repo` scope |
+
+#### Required Variables
+
+| Variable         | Description                   | Example           |
+| ---------------- | ----------------------------- | ----------------- |
+| `AWS_REGION`     | AWS region                    | `us-east-1`       |
+| `ECR_REPOSITORY` | ECR repository name           | `my-service`      |
+| `CONTAINER_NAME` | Docker container name         | `my-service`      |
+| `CONTAINER_PORT` | Container port                | `3000`            |
+| `SECRET`         | AWS Secrets Manager secret ID | `my-service/prod` |
+
+### AWS Secrets Manager Setup
+
+Create a secret in AWS Secrets Manager with all required environment variables:
+
+1. Go to **AWS Console → Secrets Manager → Store a new secret**
+2. Choose **Other type of secret (key/value)**
+3. Add all required keys:
+
+```json
+{
+  "DATABASE_URL": "postgresql://user:password@host:5432/dbname",
+  "JWT_SECRET": "your-jwt-secret-min-32-chars",
+  "JWT_EXPIRES_IN": "15",
+  "JWT_REFRESH_EXPIRES_IN": "7",
+  "JWT_RESET_PASSWORD_EXPIRES_IN": "1",
+  "DELIVEROO_CLONE_API_KEY": "your-api-key",
+  "SERVICE_NAME": "my-service",
+  "PORT": "3000",
+  "NODE_ENV": "production",
+  "LOG_LEVEL": "info",
+  "BASE_URL": "https://api.example.com",
+  "COMPANY_NAME": "My Company",
+  "COMPANY_EMAIL": "noreply@example.com",
+  "LOGO_URL": "https://example.com/logo.png",
+  "SUPPORT_EMAIL": "support@example.com",
+  "APP_URL": "https://example.com",
+  "RESEND_API_KEY": "re_xxxxxxxxxxxx"
+}
 ```
-AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-ECR_REPOSITORY
-EC2_HOST, EC2_USER, EC2_SSH_KEY
+
+4. Name the secret (e.g., `my-service/prod`) - use this as the `SECRET` variable in GitHub
+
+### IAM Policy for Deploy User
+
+Create an IAM user with this policy:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetRepositoryPolicy",
+        "ecr:DescribeRepositories",
+        "ecr:ListImages",
+        "ecr:BatchGetImage"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Resource": "arn:aws:secretsmanager:region:account:secret:my-service/*"
+    }
+  ]
+}
 ```
+
+### Manual Trigger
+
+You can manually trigger releases from GitHub Actions:
+
+1. Go to **Actions → CI/CD — Production Release** (or Development)
+2. Click **Run workflow**
+3. Select the environment and click **Run workflow**
+
+Both workflows also run automatically on push to `main` (production) or `develop` (development).
